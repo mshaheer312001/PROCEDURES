@@ -1,0 +1,145 @@
+1. Stop all middle tier services including the concurrent managers and verify that all APPS-Tier processes are down:
+
+ps -fu<APPS User> | grep FND
+The command will show all processes on OS level, which are running for the Concurrent Managers. It can take some minutes until all 
+CCM processes are stopped.
+
+Answer:
+
+# Login as apps user
+su - apps
+
+#Run environment File
+. EBSapps.env run  (/home/oracle)
+
+# Stop all middle tier services
+cd $ADMIN_SCRIPTS_HOME
+./adstpall.sh
+
+# Verify all FND processes are stopped (run multiple times until no output)
+ps -fu $USER | grep FND
+
+# If any processes remain, kill them manually (note the PIDs from ps command)
+kill -9 <PID1> <PID2> <PID3>
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+2. Stop the Database and verify, that all Database processes are down.
+
+Answer: 
+
+# Login as oracle user
+su - oracle 
+
+#Run environment File:
+. uat2CDB_prdoraclegldb.env run  (/DB/opt/oracle/PROD/19.0.0/)
+
+# Stop the database
+sqlplus / as sysdba
+SQL> shutdown immediate
+SQL> exit
+
+# Verify database processes are down
+ps -ef | grep ora_ | grep -v grep
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+3. Start the database.
+
+Answer:
+
+# Login as oracle user
+su - oracle
+
+# Start the database
+sqlplus / as sysdba
+SQL> startup
+SQL> exit
+
+lsnrctl start
+lsnrctl status
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+4. Execute AutoConfig on all Tiers - first on the DB Tier and then on the APPS Tier(s) to repopulate the required system tables.
+
+Answer:
+
+First on DB Tier:
+cd $ORACLE_HOME/appsutil/scripts/UAT2_uat2oraclegldb
+./adautocfg.sh
+
+Then on APPS Tier:
+# Login as apps user
+su - apps
+
+cd $ADMIN_SCRIPTS_HOME
+./adautocfg.sh
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+. Verify the Concurrent Manager definition via the following select:
+
+4.1 sqlplus APPS/<Password>
+4.2 select CONCURRENT_QUEUE_NAME from FND_CONCURRENT_QUEUES where CONCURRENT_QUEUE_NAME like 'FNDSM%';
+
+Answer:
+
+# Login as apps user
+su - apps
+
+sqlplus APPS/<your_apps_password>
+
+SQL> select CONCURRENT_QUEUE_NAME from FND_CONCURRENT_QUEUES where CONCURRENT_QUEUE_NAME like 'FNDSM%';
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
+After Completing These Steps
+Start all middle tier services:
+
+
+cd $ADMIN_SCRIPTS_HOME
+./adstrtal.sh
+Apps Password
+Weblogic password
+
+Monitor the concurrent managers:
+cd $FND_TOP/bin
+./concsub -q FNDSM
+
+
+
+
+
+
+
+
+
+if request not run and goes into warning with no manager and in active phase.
+-----------------------------Working with sajjad bhai------------------------------------------------------------------
+1. go to     system administrator->concurrent-> manager -> administer
+2. check that standard Manger and internal manager, then click on "terminate" button through form and refresh the page.
+3. if not work then go to mobextrem apps server
+4. . EBSapps.env run
+5. cd $ADMIN_SCRIPTS_HOME
+6. ./adcmctl.sh start
+Enter username:
+enter password:
+
+7. ./adcmctl.sh status
+
+8. ./adcmctl.sh stop 
+Enter username:
+enter password:
+
+9. ./adcmctl.sh status
+
+10. ./adcmctl.sh start
+Enter username:
+enter password:
+
+11. ./adcmctl.sh status
